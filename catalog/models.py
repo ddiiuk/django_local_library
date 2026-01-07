@@ -1,3 +1,81 @@
 from django.db import models
 
 # Create your models here.
+from django.urls import reverse # Використовується для отримання URL-адреси об'єкта
+from django.db.models import UniqueConstraint # Для унікальних значень
+from django.db.models.functions import Lower # Для перетворення тексту в нижній регістр+
+
+import uuid # Необхідно для унікальних ідентифікаторів
+
+
+class Genre(models.Model):
+    name=models.CharField(
+        max_length=200,
+        unique=True,
+        help_text='Enter a book genre (e.g. Science Fiction, French Poetry etc.)'
+    )
+    def __str__(self):
+        """Рядок для представлення об'єкта моделі."""
+        return self.name
+    def get_absolute_url(self):
+        """Повертає URL для доступу до конкретного екземпляра жанру."""
+        return reverse('genre-detail', args=[str(self.id)])
+
+
+class Meta:
+    constraints=[
+        UniqueConstraint(
+            Lower('name'),
+            name='genre_name_case_insensitive_unique',
+            violation_error_massage='Genre already exists (case insensitive match)'
+
+        ),
+    ]
+
+
+class Book(models.Model):
+    title=models.CharField(max_length=200)
+    author=models.ForeignKey('Author',on_delete=models.RESTRICT, null=True)
+    summary=models.TextField(max_length=1000, help_text="Enter a brief description of the book")
+    isbn=models.CharField(max_length=13,
+                          unique=True,
+                          help_text='13 Character <a href="https://www.isbn-international.org/content/what-isbn'
+                                      '">ISBN number</a>')
+    # ManyToManyField використовується, бо жанр може містити багато книг, а книга — багато жанрів.
+    genre=models.ManyToManyField(Genre, help_text="Select a genre for this book")
+
+    def __str__(self):
+        """Рядок для представлення об'єкта моделі."""
+        return self.title
+    def get_absolute_url(self):
+        """Повертає URL для доступу до детальної інформації про цю книгу."""
+        return reverse('book-detail', args=[str(self.id)])
+    
+class BookInstance(models.Model):
+    """Модель, що представляє конкретний примірник книги (тобто той, який можна позичити в бібліотеці)."""
+    id = models.UUIDField(primary_key=True ,default=uuid.uuid4,
+                          help_text='Unique ID for this particular book across whole library'
+                          )
+    book=models.ForeignKey('Book', on_delete=models.RESTRICT,null=True)
+    imprint=models.CharField(max_length=200)
+    due_back=models.DateField(null=True, blank=True)
+
+    LOAN_STATUS=(
+        ('m','Maintenance'),
+        ('o','On loan'),
+        ('a', 'Available'),
+        ('r', 'Reversved'),
+    )
+    status=models.CharField(
+        max_length=1,
+        choices=LOAN_STATUS,
+        blank=True,
+        default='m',
+        help_text='Book availibility',
+        )
+class Meta:
+    ordering=['due_back']
+
+def __str__(self):
+    return f'{self.id} ({self.book.title})'
+    
