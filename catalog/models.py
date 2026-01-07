@@ -22,15 +22,15 @@ class Genre(models.Model):
         return reverse('genre-detail', args=[str(self.id)])
 
 
-class Meta:
-    constraints=[
-        UniqueConstraint(
-            Lower('name'),
-            name='genre_name_case_insensitive_unique',
-            violation_error_massage='Genre already exists (case insensitive match)'
-
-        ),
-    ]
+    class Meta:
+        constraints=[
+            UniqueConstraint(
+                Lower('name'),
+                name='genre_name_case_insensitive_unique',
+                violation_error_massage='Genre already exists (case insensitive match)'
+    
+            ),
+        ]
 
 
 class Book(models.Model):
@@ -73,9 +73,9 @@ class BookInstance(models.Model):
         default='m',
         help_text='Book availibility',
         )
-class Meta:
-    ordering=['due_back']
+    class Meta:
+        ordering=['due_back']
 
-def __str__(self):
-    return f'{self.id} ({self.book.title})'
+    def __str__(self):
+        return f'{self.id} ({self.book.title})'
     
